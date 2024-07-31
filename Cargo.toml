@@ -1,0 +1,12 @@
+[package]
+name = "rusty_crypt"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+aes = "0.7"
+block-modes = "0.8"
+block-padding = "0.2"
+walkdir = "2.3"
+dirs = "4.0"
+rand = "0.8"
