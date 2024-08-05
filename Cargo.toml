@@ -2,18 +2,15 @@
 name = "rustycry"
 version = "0.2.0"
 edition = "2021"
+license = "MIT"
 
 [dependencies]
 aes = "0.7"
 block-modes = "0.8"
-block-padding = "0.2"
 walkdir = "2.3"
-dirs = "4.0"
 rand = "0.8"
+dirs = "4.0"
 
 [profile.release]
-opt-level = "z"
+opt-level = 3
 lto = true
-codegen-units = 1
-panic = "abort"
-
