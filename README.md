@@ -1,8 +1,5 @@
 ![Alt Text](https://i.ibb.co/dbdHNdv/rust.jpg)
 
-# RustyCry
-The foundational code of a rust-based folder-targeting ransomware.
-
 # Information
 - Simple and quick AES-256 encryption of common folders. (Desktop, docs, etc.)
 - Randomized IV every run.
