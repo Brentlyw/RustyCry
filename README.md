@@ -1,11 +1,14 @@
+![Alt Text](https://i.ibb.co/dbdHNdv/rust.jpg)
+
 # RustyCry
-The foundational code of a rust-based folder-targeting file encrypter.
+The foundational code of a rust-based folder-targeting ransomware.
 
 # Information
 - Simple and quick AES-256 encryption of common folders. (Desktop, docs, etc.)
 - Randomized IV every run.
-- Uses function pointers for indirection, mimicks dynamic loading.
-- Low detection rate (0/75 VirusTotal 8/27/2024)
+- Layered function calls.
+- Uses function pointers, mimicks dynamic loading.
+- Extemely low detection rate (0/75 VirusTotal 8/27/2024)
 
 # Scan Results
 - https://tip.neiki.dev/file/6e6e0f85b332495222793b669771cf4306ff4dcaf43332b01c82aa9fef804a2e
